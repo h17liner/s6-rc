@@ -1188,8 +1188,8 @@ static inline void write_servicedirs (char const *compiled, s6rc_db_t const *db,
     unsigned int fd = 0 ;
     int ispipelined = db->services[i].x.longrun.pipeline[0] < db->nlong || db->services[i].x.longrun.pipeline[1] < db->nlong ;
     register int r ;
-    char srcfn[srcdirlen + len + 18] ;
-    char dstfn[clen + len + 30] ;
+    char srcfn[srcdirlen + len + 28] ;
+    char dstfn[clen + len + 40] ;
     byte_copy(dstfn, clen, compiled) ;
     byte_copy(dstfn + clen, 13, "/servicedirs/") ;
     byte_copy(dstfn + clen + 13, len + 1, db->string + db->services[i].name) ;
@@ -1275,6 +1275,29 @@ static inline void write_servicedirs (char const *compiled, s6rc_db_t const *db,
       }
       close(fd) ;
     }
+
+    byte_copy(srcfn + srcdirlen + len + 2, 25, "supervisor-ignore-sigint") ;
+    if (stat(srcfn, &st) < 0)
+    {
+      if (errno != ENOENT)
+      {
+        cleanup(compiled) ;
+        strerr_diefu2sys(111, "stat ", srcfn) ;
+      }
+    }
+    else
+    {
+      int fd ;
+      byte_copy(dstfn + clen + 14 + len, 25, "supervisor-ignore-sigint") ;
+      fd = open_trunc(dstfn) ;
+      if (fd < 0)
+      {
+        cleanup(compiled) ;
+        strerr_diefu2sys(111, "touch ", dstfn) ;
+      }
+      close(fd) ;
+    }
+
 
     byte_copy(dstfn + clen + 14 + len, 5, "data") ;
     byte_copy(srcfn + srcdirlen + len + 2, 5, "data") ;
